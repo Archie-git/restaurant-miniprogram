@@ -1,0 +1,42 @@
+.commodity-container{
+  margin-top: 10px;
+  display: flex;
+  flex-direction: row;
+  font-size: 14PX;
+  .commodity-category{
+    background: lightcyan;
+    .commodity-category-item{
+      display: block;
+      width: 100PX;
+      height: 48PX;
+      text-align: center;
+      line-height: 48PX;
+    }
+    .selected{
+      background: lightblue !important;
+      color: white
+    }
+  }
+  .commodity-list{
+    width: 100%;
+    padding-left: 10px;
+    .commodity-list-item{
+      display: flex;
+      flex-direction: row;
+      margin-bottom: 10px;
+      background: white;
+      .commodity-pic{
+        background: yellow;
+        width: 35%;
+      }
+      .commodity-info{
+        margin-left: 10px;
+        width: 100%;
+        .commodity-info-bottom{
+          display: flex;
+          flex-direction: row;
+        }
+      }
+    }
+  }
+}
