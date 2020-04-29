@@ -1,8 +1,8 @@
 import Taro, { Component } from '@tarojs/taro'
-import {View, Text} from '@tarojs/components'
-import { AtButton, AtTabs, AtTabsPane, AtAvatar, AtIcon, AtNoticebar } from "taro-ui"
+import { View, Text } from '@tarojs/components'
+import { AtButton, AtTabs, AtTabsPane, AtAvatar, AtIcon, AtNoticebar, AtMessage } from "taro-ui"
 import Commodity from '../../components/commodity/commodity'
-import Order from '../../components/order/order'
+import Customer from '../../components/customer/customer'
 import Introduce from '../../components/introduce/introduce'
 import Cart from '../../components/cart/cart'
 
@@ -10,47 +10,63 @@ class Index extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      current: 0
+      current: 0,
+      data: {},
     }
   };
-  componentWillMount = () => {
-    console.log("获取用户信息")
-  };
+
   //eslint-disable-next-line react/sort-comp
   config = {
     navigationBarTitleText: '首页'
   };
-  handleTabClick = (value) => {
-    this.setState({current: value})
+  componentWillMount = async () => {
+    this.getRemoteData()
   };
-  handleSearch = () => {
-    Taro.navigateTo({url: '/pages/search/search'}).then(() => {
-      console.log("跳转至商品搜索页面")
-    }, err => {
-      console.log('跳转至商品搜索页面失败：');
-      console.log(err)
+  componentDidMount = () => {
+    this.timeID = setInterval(async () => {
+      this.getRemoteData();
+    }, 1000)
+  };
+  componentWillUnmount = () => {
+    clearInterval(this.timeID)
+  };
+  getRemoteData = async () => {
+    const res = await Taro.request({
+      url: 'https://archie.zone/shop/info',
+      method: 'GET'
     });
-    console.log('handleSearch work');
+    if(res.statusCode === 200){
+      if(res.data.status === 0){
+        res.data.data.profile = 'https://archie.zone/upload/'+res.data.data.profile;
+        this.setState({data: res.data.data})
+      }else{
+        Taro.atMessage({
+          'type': 'warning',
+          'message': '请求失败! 服务器发生了未知错误'
+        })
+      }
+    }else{
+      Taro.atMessage({
+        'type': 'warning',
+        'message': '请求失败! 请检查网络连接状况'
+      })
+    }
   };
-  handlePay = () => {
-    Taro.navigateTo({url: '/pages/payment/payment'}).then(() => {
-      console.log("跳转至支付页面")
-    }, err => {
-      console.log(err)
-    })
+  handleTabClick = (value) => {
+    this.setState({current: value});
   };
-  handleScroll = (e) => {
-    console.log("kkk");
-    console.log(e.detail)
+  handleSearch = async () => {
+    await Taro.navigateTo({url: '/pages/search/search'})
   };
   render () {
-    const tableList = [{title: '点餐'}, {title: '我的订单'}, {title: '品牌信息'}, ];
+    const tableList = [{title: '点餐'}, {title: '个人中心'}, {title: '品牌信息'}];
     return (
       <View style='padding: 10px; background: #F0F0F0; min-height: 100vh'>
+        <AtMessage />
         {/*头部*/}
         <View className='at-row'>
-          <AtAvatar className='at-col' image='https://jdc.jd.com/img/200' circle />
-          <View className='at-col at-article__h1' style='margin: auto 10px' >蟹宝王餐厅</View>
+          <AtAvatar className='at-col' image={this.state.data.profile} circle />
+          <View className='at-col at-article__h1' style='margin: auto 10px'>{this.state.data.name}</View>
           <View className='at-col' style='margin: auto 35px'>
             <AtButton size='small' type='primary' onClick={this.handleSearch} circle>
               <AtIcon value='search' size='15' />
@@ -60,29 +76,36 @@ class Index extends Component {
         </View>
         {/*通告栏*/}
         <View style='margin: 10px auto'>
-          <AtNoticebar icon='volume-plus'>
-            这是 NoticeBar 通告栏
-          </AtNoticebar>
+          <AtNoticebar icon='volume-plus'>{this.state.data.notice}</AtNoticebar>
         </View>
 
-        {/*<View style='position: sticky; top: 10px'>*/}
-        {/*  <View>dksljfddddddddddddd</View>*/}
-        {/*</View>*/}
-        {/*/!*领券活动*!/*/}
-        {/*<View style='background: yellow; margin-top: 10px'>*/}
-        {/*  <View>我是领券</View>*/}
-        {/*</View>*/}
-        {/*/!*广告活动*!/*/}
-        {/*<View style='background: yellow; margin-top: 10px'>*/}
-        {/*  <View>我是广告</View>*/}
-        {/*</View>*/}
+
+        {/*活动领券以及轮播图广告*/}
+        {/*<Swiper*/}
+        {/*  className='test-h'*/}
+        {/*  indicatorColor='#999'*/}
+        {/*  indicatorActiveColor='#333'*/}
+        {/*  vertical*/}
+        {/*  circular*/}
+        {/*  indicatorDots*/}
+        {/*  autoplay>*/}
+        {/*  <SwiperItem>*/}
+        {/*    <View className='demo-text-1'>1</View>*/}
+        {/*  </SwiperItem>*/}
+        {/*  <SwiperItem>*/}
+        {/*    <View className='demo-text-2'>2</View>*/}
+        {/*  </SwiperItem>*/}
+        {/*  <SwiperItem>*/}
+        {/*    <View className='demo-text-3'>3</View>*/}
+        {/*  </SwiperItem>*/}
+        {/*</Swiper>*/}
 
 
         {/*功能模块*/}
         <View style='margin-bottom: 50px'>
           <AtTabs current={this.state.current} tabList={tableList} onClick={this.handleTabClick}>
             <AtTabsPane current={this.state.current} index={0}><Commodity /></AtTabsPane>
-            <AtTabsPane current={this.state.current} index={1}><Order /></AtTabsPane>
+            <AtTabsPane current={this.state.current} index={1}><Customer /></AtTabsPane>
             <AtTabsPane current={this.state.current} index={2}><Introduce /></AtTabsPane>
           </AtTabs>
         </View>
@@ -93,6 +116,7 @@ class Index extends Component {
             </View>
           ) : null
         }
+
       </View>
     )
   }

@@ -1,49 +1,51 @@
 import Taro, { Component } from '@tarojs/taro'
-import { View, Text } from '@tarojs/components'
-import { AtIcon, AtTextarea, AtForm, AtButton } from "taro-ui";
-import { connect } from '@tarojs/redux'
-import { add, minus, asyncAdd } from '../../actions/counter'
+import {View, Text, Image} from '@tarojs/components'
+import { AtIcon, AtTextarea, AtForm, AtButton, AtRate } from "taro-ui";
 
-
-@connect(({ counter }) => ({
-  counter
-}), (dispatch) => ({
-  add () {
-    dispatch(add())
-  },
-  dec () {
-    dispatch(minus())
-  },
-  asyncAdd () {
-    dispatch(asyncAdd())
-  }
-}))
 class Evaluate extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      value: ''
+      commodity: [],
+      stars: 5,
+      evaluation: ''
     }
   }
-
   // eslint-disable-next-line react/sort-comp
   config = {
     navigationBarTitleText: '评价'
   };
-
-  componentWillReceiveProps (nextProps) {
-    console.log(this.props, nextProps)
-  }
-
-  componentWillUnmount () { }
-
-  componentDidShow () { }
-
-  componentDidHide () { }
-
-
+  componentWillMount = async () => {
+    const res1 = await Taro.request({
+      url: 'https://archie.zone/order/search',
+      method: 'GET',
+      data: {id: this.$router.params.id}
+    });
+    if(res1.statusCode === 200){
+      if(res1.data.status === 0){
+        let order = res1.data.data[0];
+        let commodity = JSON.parse(order.commodity);
+        this.setState({
+          commodity: commodity
+        });
+      }else{
+        Taro.atMessage({
+          'type': 'warning',
+          'message': '请求失败! 服务器发生了未知错误'
+        })
+      }
+    }else{
+      Taro.atMessage({
+        'type': 'warning',
+        'message': '请求失败! 请检查网络连接状况'
+      })
+    }
+  };
   handleEvaluationChange = (value) => {
-    console.log(value)
+    this.setState({evaluation: value})
+  };
+  handleRateChange = (value) => {
+    this.setState({stars: value})
   };
   handleSubmit = () => {
     console.log("handle submit")
@@ -51,54 +53,52 @@ class Evaluate extends Component {
   render () {
     return (
       <View style='height: 100vh; padding: 10px 10px 50px; background: #F0F0F0'>
-        <View style='margin: 15px 0 5px'><Text className='at-article__h2'>商品列表</Text></View>
-        <View style='padding: 10px; background: white; font-size: 13px'>
+        <View style='margin: 15px 20px 5px; font-weight: bolder; font-size: 15px'><Text>商品列表</Text></View>
+        <View style='font-size: 14px'>
           {/*根据订单的商品列表进行渲染*/}
-          <View className='at-row' style='margin-bottom: 10px'>
-            <View className='at-col at-col-2' style='margin-right: 10px; background: yellow'>图</View>
-            <View className='at-col at-col-10'>
-              <View className='at-row'>
-                <Text className='at-col at-col-7'>牛腩烩饭</Text>
-                <View className='at-col at-col-3'><AtIcon value='close' size='10' />1</View>
-                <Text className='at-col at-col-2'>￥23</Text>
-              </View>
-              <Text>中辣</Text>
-            </View>
-          </View>
-          <View className='at-row' style='margin-bottom: 10px'>
-            <View className='at-col at-col-2' style='margin-right: 10px; background: yellow'>图</View>
-            <View className='at-col at-col-10'>
-              <View className='at-row'>
-                <Text className='at-col at-col-7'>牛腩烩饭</Text>
-                <View className='at-col at-col-3'><AtIcon value='close' size='10' />1</View>
-                <Text className='at-col at-col-2'>￥23</Text>
-              </View>
-              <Text>中辣</Text>
-            </View>
-          </View>
-
-
+          {
+            this.state.commodity.length === 0 ? null : this.state.commodity.map((item, index) => {
+              return (
+                <View
+                  key={index}
+                  style='margin-bottom: 5px; padding: 10px; box-sizing: border-box; background: white'
+                  onClick={() => this.handleDetail(item.id)}
+                >
+                  <Image
+                    style='display: inline-block; vertical-align: top; height: 60px; width: 60px'
+                    src={'https://archie.zone/upload/'+item.picture} mode='scaleToFill'
+                  />
+                  <View style='display: inline-block; margin-left: 10px; width: 70%'>
+                    <View style='display: inline-block; width: 30%'><Text>{item.name}</Text></View>
+                    <View style='display: inline-block; width: 20%'><AtIcon value='close' size='10' />{item.count}</View>
+                    <View style='display: inline-block; width: 20%'><Text>￥{item.price}</Text></View>
+                    <View><Text>{item.note}</Text></View>
+                  </View>
+                </View>
+              )
+            })
+          }
         </View>
 
-        <View style='margin: 15px 0 5px'><Text className='at-article__h2'>评价</Text></View>
-        <View style='padding: 10px 10px 50px; background: white'>
-          <View>
+
+        <View style='margin: 15px 20px 5px; font-weight: bolder; font-size: 15px'><Text>评价</Text></View>
+        <View style='padding: 10px 10px 50px; background: white; font-size: 14px'>
+          <View style='margin-bottom: 15px'>
             <Text>等级：</Text>
-            <Text>$$$$$</Text>
+            <View style='display: inline-block; vertical-align: top'>
+              <AtRate max={5} value={this.state.stars} margin={5} onChange={this.handleRateChange} /></View>
           </View>
           <View>
             <Text style='margin-bottom: 5px'>描述：</Text>
-            <AtForm onSubmit={this.handleSubmit}>
-              <View style='margin: 5px 0 20px'>
-                <AtTextarea
-                  value=''
-                  placeholder='请输入评价描述'
-                  onChange={()=>this.handleEvaluationChange(this.target.value)}
-                  height={200}
-                />
-              </View>
-              <AtButton style='margin-top: 5px' type='primary' formType='submit'>提交</AtButton>
-            </AtForm>
+            <View style='margin: 5px 0 20px'>
+              <AtTextarea
+                value={this.state.evaluation}
+                placeholder='请输入评价描述'
+                onChange={this.handleEvaluationChange}
+                height={200}
+              />
+            </View>
+            <AtButton style='margin-top: 5px' type='primary' onClick={() => this.handleSubmit}>提交</AtButton>
           </View>
         </View>
       </View>
